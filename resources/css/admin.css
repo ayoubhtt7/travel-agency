@@ -1,0 +1,30 @@
+body {
+    background: linear-gradient(135deg, #141E30, #243B55);
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+}
+
+.admin-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 20px;
+    transition: 0.3s;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+}
+
+.btn-premium {
+    background: linear-gradient(45deg, #00c6ff, #0072ff);
+    border: none;
+    color: white;
+    border-radius: 30px;
+    padding: 8px 20px;
+}
+
+.btn-danger {
+    border-radius: 30px;
+}
