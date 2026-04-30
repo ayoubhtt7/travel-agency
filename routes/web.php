@@ -100,11 +100,8 @@ Route::middleware(['auth', 'admin'])
 */
 
 require __DIR__ . '/auth.php';
-<?php
 
-// Add this TEMPORARILY to your routes/web.php
-// Visit: /debug-flights in your browser
-// DELETE IT after debugging
+
 
 Route::get('/debug-flights', function () {
     $dep = \App\Models\Airport::where('code', 'ALG')->first();
