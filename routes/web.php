@@ -29,7 +29,6 @@ Route::get('/trips/{id}', [TripController::class, 'show'])->name('trips.show');
 // Public flight search
 Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
 Route::get('/flights/search', [FlightController::class, 'search'])->name('flights.search');
-Route::get('/flights/status', [FlightController::class, 'status'])->name('flights.status');
 
 
 /*
@@ -90,10 +89,7 @@ Route::middleware(['auth', 'admin'])
 
         Route::resource('users', AdminUserController::class)
             ->only(['index', 'update', 'destroy']);
-        Route::get('flights/import',         [AdminFlightController::class, 'importForm'])   ->name('flights.import');
-        Route::get('flights/import/preview', [AdminFlightController::class, 'importPreview'])->name('flights.import.preview');
-        Route::post('flights/import/save',   [AdminFlightController::class, 'importSave'])   ->name('flights.import.save');
-
+        
 
     });
 

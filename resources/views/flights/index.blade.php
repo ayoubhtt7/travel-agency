@@ -94,10 +94,8 @@
                     {{-- Return date --}}
                     <div class="col-md-2" id="returnDateWrapper">
                         <label class="form-label fw-semibold">📅 Return Date</label>
-                        <input type="date" name="return_date" id="returnDateInput"
-                               class="form-control"
-                               min="{{ date('Y-m-d', strtotime('+1 day')) }}"
-                               required>
+                        <input type="date" name="return_date" class="form-control"
+                               min="{{ date('Y-m-d', strtotime('+1 day')) }}">
                     </div>
 
                 </div>
@@ -235,28 +233,21 @@
 
 @push('scripts')
 <script>
-function setFlightType(type) {
-    const retour = document.getElementById('returnDateWrapper');
-    const input  = document.getElementById('returnDateInput');
-    if (type === 'aller_retour') {
-        retour.style.display = '';
-        input.required = true;
-    } else {
-        retour.style.display = 'none';
-        input.required = false;
-        input.value = '';
-    }
-    document.getElementById('flightType').value = type;
-}
-
-// Initialize on page load — Round Trip is active by default so show return date
-setFlightType('aller_retour');
-
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        setFlightType(this.dataset.type);
+        const type = this.dataset.type;
+        document.getElementById('flightType').value = type;
+        const retour = document.getElementById('returnDateWrapper');
+        if (type === 'aller_retour') {
+            retour.style.display = '';
+            retour.querySelector('input').required = true;
+        } else {
+            retour.style.display = 'none';
+            retour.querySelector('input').required = false;
+            retour.querySelector('input').value = '';
+        }
     });
 });
 
