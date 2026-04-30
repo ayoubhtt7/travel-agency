@@ -5,7 +5,14 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>✈ Manage Flights</h2>
-        <a href="{{ route('admin.flights.create') }}" class="btn btn-primary">+ Add Flight</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.flights.import') }}" class="btn btn-outline-success">
+                🌐 Import from AviationStack
+            </a>
+            <a href="{{ route('admin.flights.create') }}" class="btn btn-primary">
+                + Add Flight
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -72,7 +79,9 @@
                         @endif
                     </td>
                     <td>
-                        <div class="d-flex gap-1">
+                        <div class="d-flex gap-1 flex-wrap">
+                            <a href="{{ route('flights.status', ['flight_number' => $flight->flight_number]) }}"
+                               class="btn btn-sm btn-outline-info" target="_blank" title="Live Status">📡</a>
                             <a href="{{ route('admin.flights.edit', $flight) }}"
                                class="btn btn-sm btn-warning">Edit</a>
                             <form action="{{ route('admin.flights.destroy', $flight) }}" method="POST"
@@ -86,7 +95,9 @@
                 @empty
                 <tr>
                     <td colspan="10" class="text-center text-muted py-4">
-                        No flights found. <a href="{{ route('admin.flights.create') }}">Add the first flight</a>.
+                        No flights found.
+                        <a href="{{ route('admin.flights.import') }}">Import from AviationStack</a>
+                        or <a href="{{ route('admin.flights.create') }}">add manually</a>.
                     </td>
                 </tr>
                 @endforelse
