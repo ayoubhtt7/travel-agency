@@ -63,9 +63,6 @@ class FlightController extends Controller
         ));
     }
 
-    /**
-     * Show passenger details form before confirming booking
-     */
     public function passengerForm(Request $request)
     {
         $request->validate([
@@ -90,26 +87,23 @@ class FlightController extends Controller
         ));
     }
 
-    /**
-     * Store booking + all passenger details
-     */
     public function book(Request $request)
     {
         $request->validate([
-            'flight_id'                          => 'required|exists:flights,id',
-            'return_flight_id'                   => 'nullable|exists:flights,id',
-            'passengers'                         => 'required|integer|min:1|max:9',
-            'class'                              => 'required|in:economique,eco_premium,affaires,premiere',
-            'type'                               => 'required|in:aller_simple,aller_retour',
-            'passenger'                          => 'required|array',
-            'passenger.*.first_name'             => 'required|string|max:100',
-            'passenger.*.last_name'              => 'required|string|max:100',
-            'passenger.*.passport_number'        => 'required|string|max:50',
-            'passenger.*.date_of_birth'          => 'required|date|before:today',
-            'passenger.*.gender'                 => 'required|in:male,female',
-            'passenger.*.type'                   => 'required|in:adult,child,infant',
-            'passenger.*.nationality'            => 'required|string|max:100',
-            'passenger.*.passport_expiry'        => 'required|date|after:today',
+            'flight_id'                   => 'required|exists:flights,id',
+            'return_flight_id'            => 'nullable|exists:flights,id',
+            'passengers'                  => 'required|integer|min:1|max:9',
+            'class'                       => 'required|in:economique,eco_premium,affaires,premiere',
+            'type'                        => 'required|in:aller_simple,aller_retour',
+            'passenger'                   => 'required|array',
+            'passenger.*.first_name'      => 'required|string|max:100',
+            'passenger.*.last_name'       => 'required|string|max:100',
+            'passenger.*.passport_number' => 'required|string|max:50',
+            'passenger.*.date_of_birth'   => 'required|date|before:today',
+            'passenger.*.gender'          => 'required|in:male,female',
+            'passenger.*.type'            => 'required|in:adult,child,infant',
+            'passenger.*.nationality'     => 'required|string|max:100',
+            'passenger.*.passport_expiry' => 'required|date|after:today',
         ]);
 
         $flight = Flight::findOrFail($request->flight_id);
@@ -126,7 +120,6 @@ class FlightController extends Controller
             $total += $returnFlight->price * $request->passengers;
         }
 
-        // Create the booking
         $booking = FlightBooking::create([
             'user_id'          => auth()->id(),
             'flight_id'        => $flight->id,
@@ -138,7 +131,6 @@ class FlightController extends Controller
             'status'           => 'confirmed',
         ]);
 
-        // Save each passenger's details
         foreach ($request->passenger as $p) {
             FlightPassenger::create([
                 'flight_booking_id' => $booking->id,
@@ -154,11 +146,8 @@ class FlightController extends Controller
         }
 
         $flight->decrement('available_seats', $request->passengers);
-        if ($returnFlight) {
-            $returnFlight->decrement('available_seats', $request->passengers);
-        }
+        if ($returnFlight) $returnFlight->decrement('available_seats', $request->passengers);
 
-        return redirect()->route('dashboard')
-            ->with('success', 'Booking confirmed! Your flight has been reserved.');
+        return redirect()->route('dashboard')->with('success', 'Booking confirmed!');
     }
 }
