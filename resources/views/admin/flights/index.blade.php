@@ -37,12 +37,12 @@
                         <div class="text-muted small">{{ $flight->flight_number }}</div>
                     </td>
                     <td>
-                        <strong>{{ $flight->departureAirport->code }}</strong>
-                        <div class="text-muted small">{{ $flight->departureAirport->city }}</div>
+                        <strong>{{ $flight->departureAirport->code ?? 'N/A' }}</strong>
+                        <div class="text-muted small">{{ $flight->departureAirport->city ?? '—' }}</div>
                     </td>
                     <td>
-                        <strong>{{ $flight->arrivalAirport->code }}</strong>
-                        <div class="text-muted small">{{ $flight->arrivalAirport->city }}</div>
+                        <strong>{{ $flight->arrivalAirport->code ?? 'N/A' }}</strong>
+                        <div class="text-muted small">{{ $flight->arrivalAirport->city ?? '—' }}</div>
                     </td>
                     <td>
                         {{ $flight->departure_at->format('d M Y') }}
