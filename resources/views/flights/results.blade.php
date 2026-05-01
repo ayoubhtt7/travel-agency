@@ -39,11 +39,13 @@
             <span class="badge bg-primary">
                 @php
                     $classMap = [
-                        'economy' => 'Economy',
-                        'business' => 'Business',
-                        'first' => 'First Class'
+                        'economique' => 'Economy',
+                        'eco_premium' => 'Premium Economy',
+                        'affaires'    => 'Business',
+                        'premiere'    => 'First Class'
                     ];
                 @endphp
+
                 {{ $classMap[$request->class] ?? ucfirst($request->class) }}
             </span>
 
@@ -135,7 +137,7 @@
     @endforelse
 
     {{-- RETURN --}}
-    @if($request->type === 'roundtrip' && $returnFlights->isNotEmpty())
+    @if($request->type === 'aller_retour' && $returnFlights->isNotEmpty())
     <hr class="my-4">
 
     <h4 class="mb-3">
@@ -182,7 +184,7 @@
                         <input type="hidden" name="return_flight_id" value="{{ $flight->id }}">
                         <input type="hidden" name="passengers" value="{{ $request->passengers }}">
                         <input type="hidden" name="class" value="{{ $request->class }}">
-                        <input type="hidden" name="type" value="roundtrip">
+                        <input type="hidden" name="type" value="aller_retour">
                         <button class="btn btn-success btn-sm w-100">Book Round Trip</button>
                     </form>
                     @else
@@ -197,7 +199,7 @@
     </div>
     @endforeach
 
-    @elseif($request->type === 'roundtrip' && $returnFlights->isEmpty())
+    @elseif($request->type === 'aller_retour' && $returnFlights->isEmpty())
     <div class="alert alert-warning mt-3">
         No return flights available.
     </div>
