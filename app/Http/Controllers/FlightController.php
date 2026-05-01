@@ -18,29 +18,42 @@ class FlightController extends Controller
 
     public function search(Request $request)
     {
+        // ✅ FIX mappings
+        $classMap = [
+            'economique' => 'economy',
+            'eco_premium' => 'business',
+            'affaires' => 'business',
+            'premiere' => 'first',
+        ];
+
+        $typeMap = [
+            'aller_simple' => 'oneway',
+            'aller_retour' => 'roundtrip',
+        ];
+
+        $request->merge([
+            'class' => $classMap[$request->class] ?? $request->class,
+            'type'  => $typeMap[$request->type] ?? $request->type,
+        ]);
+
         $request->validate([
             'departure_code' => 'required|exists:airports,code',
             'arrival_code'   => 'required|exists:airports,code|different:departure_code',
             'departure_date' => 'nullable|date',
             'return_date'    => 'nullable|date',
             'passengers'     => 'required|integer|min:1|max:9',
-            'class'          => 'required|in:economique,eco_premium,affaires,premiere',
-            'type'           => 'required|in:aller_simple,aller_retour',
-            'with_baggage'   => 'nullable|boolean',
-            'direct_only'    => 'nullable|boolean',
+            'class'          => 'required|in:economy,business,first',
+            'type'           => 'required|in:oneway,roundtrip',
         ]);
 
         $departureAirport = Airport::where('code', $request->departure_code)->first();
         $arrivalAirport   = Airport::where('code', $request->arrival_code)->first();
 
-        // Outbound flights
-        $outboundQuery = Flight::with(['departureAirport', 'arrivalAirport'])
-            ->where('departure_airport_id', $departureAirport->id)
-            ->where('arrival_airport_id',   $arrivalAirport->id)
-            ->where('class',                $request->class)
-            ->where('available_seats',      '>=', $request->passengers);
+        $outboundQuery = Flight::where('departure_airport_id', $departureAirport->id)
+            ->where('arrival_airport_id', $arrivalAirport->id)
+            ->where('class', $request->class)
+            ->where('available_seats', '>=', $request->passengers);
 
-        // Only apply date filter if a date was provided
         if ($request->filled('departure_date')) {
             $outboundQuery->whereBetween('departure_at', [
                 $request->departure_date . ' 00:00:00',
@@ -48,33 +61,10 @@ class FlightController extends Controller
             ]);
         }
 
-        if ($request->boolean('with_baggage')) $outboundQuery->where('with_baggage', true);
-        if ($request->boolean('direct_only'))  $outboundQuery->where('is_direct', true);
-
-        $outboundFlights = $outboundQuery->orderBy('departure_at')->get();
-
-        // Return flights (aller-retour only)
-        $returnFlights = collect();
-        if ($request->type === 'aller_retour') {
-            $returnQuery = Flight::with(['departureAirport', 'arrivalAirport'])
-                ->where('departure_airport_id', $arrivalAirport->id)
-                ->where('arrival_airport_id',   $departureAirport->id)
-                ->where('class',                $request->class)
-                ->where('available_seats',      '>=', $request->passengers);
-
-            if ($request->filled('return_date')) {
-                $returnQuery->whereBetween('departure_at', [
-                    $request->return_date . ' 00:00:00',
-                    $request->return_date . ' 23:59:59',
-                ]);
-            }
-
-            $returnFlights = $returnQuery->orderBy('departure_at')->get();
-        }
+        $outboundFlights = $outboundQuery->get();
 
         return view('flights.results', compact(
             'outboundFlights',
-            'returnFlights',
             'departureAirport',
             'arrivalAirport',
             'request'
