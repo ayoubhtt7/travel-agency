@@ -14,7 +14,8 @@
 
         <div class="flight-card">
 
-            <ul class="nav nav-tabs border-0 mb-4">
+            {{-- Type tabs --}}
+            <ul class="nav nav-tabs border-0 mb-4" id="flightTypeTabs">
                 <li class="nav-item">
                     <button class="nav-link active tab-btn" data-type="aller_retour" type="button">
                         ✈ Round Trip
@@ -27,16 +28,18 @@
                 </li>
             </ul>
 
-            <form action="{{ route('flights.search') }}" method="GET">
+            <form action="{{ route('flights.search') }}" method="GET" id="flightSearchForm">
                 <input type="hidden" name="type" id="flightType" value="aller_retour">
 
                 <div class="row g-3">
 
                     {{-- Departure --}}
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold">✈ Departure</label>
+                        <label class="form-label fw-semibold">
+                            <span class="text-primary">✈</span> Departure
+                        </label>
                         <select name="departure_code" class="form-select" required>
-                            <option value="">-- Select departure --</option>
+                            <option value="">-- Departure Airport --</option>
                             @php $currentCountry = null; @endphp
                             @foreach($airports as $airport)
                                 @if($currentCountry !== $airport->country)
@@ -45,24 +48,27 @@
                                     @php $currentCountry = $airport->country; @endphp
                                 @endif
                                 <option value="{{ $airport->code }}">
-                                    {{ $airport->city }} ({{ $airport->code }})
+                                    {{ $airport->city }} ({{ $airport->code }}) – {{ $airport->name }}
                                 </option>
                             @endforeach
                             </optgroup>
                         </select>
                     </div>
 
-                    {{-- Swap --}}
+                    {{-- Swap button --}}
                     <div class="col-md-auto d-flex align-items-end pb-1">
                         <button type="button" id="swapBtn"
-                                class="btn btn-outline-primary rounded-circle px-3">⇄</button>
+                                class="btn btn-outline-primary rounded-circle px-3"
+                                title="Swap airports">⇄</button>
                     </div>
 
                     {{-- Arrival --}}
                     <div class="col-md-3">
-                        <label class="form-label fw-semibold">✈ Arrival</label>
+                        <label class="form-label fw-semibold">
+                            <span class="text-danger">✈</span> Arrival
+                        </label>
                         <select name="arrival_code" class="form-select" required>
-                            <option value="">-- Select arrival --</option>
+                            <option value="">-- Arrival Airport --</option>
                             @php $currentCountry = null; @endphp
                             @foreach($airports as $airport)
                                 @if($currentCountry !== $airport->country)
@@ -71,31 +77,25 @@
                                     @php $currentCountry = $airport->country; @endphp
                                 @endif
                                 <option value="{{ $airport->code }}">
-                                    {{ $airport->city }} ({{ $airport->code }})
+                                    {{ $airport->city }} ({{ $airport->code }}) – {{ $airport->name }}
                                 </option>
                             @endforeach
                             </optgroup>
                         </select>
                     </div>
 
-                    {{-- Departure date (optional) --}}
+                    {{-- Departure date --}}
                     <div class="col-md-2">
-                        <label class="form-label fw-semibold">
-                            📅 Departure Date
-                            <span class="text-muted fw-normal small">(optional)</span>
-                        </label>
+                        <label class="form-label fw-semibold">📅 Departure Date</label>
                         <input type="date" name="departure_date" class="form-control"
-                               value="{{ request('departure_date') }}">
+                               placeholder="Any date">
                     </div>
 
-                    {{-- Return date (optional, round trip only) --}}
+                    {{-- Return date --}}
                     <div class="col-md-2" id="returnDateWrapper">
-                        <label class="form-label fw-semibold">
-                            📅 Return Date
-                            <span class="text-muted fw-normal small">(optional)</span>
-                        </label>
+                        <label class="form-label fw-semibold">📅 Return Date</label>
                         <input type="date" name="return_date" class="form-control"
-                               value="{{ request('return_date') }}">
+                               placeholder="Any date">
                     </div>
 
                 </div>
@@ -126,7 +126,7 @@
                     {{-- Options --}}
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">Options</label>
-                        <div class="d-flex gap-3 mt-1">
+                        <div class="d-flex gap-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox"
                                        name="with_baggage" value="1" id="withBaggage">
@@ -167,9 +167,10 @@
                     <a href="{{ route('flights.search', [
                         'departure_code' => $route[0],
                         'arrival_code'   => $route[1],
+                        'departure_date' => date('Y-m-d', strtotime('+7 days')),
                         'passengers'     => 1,
                         'class'          => 'economique',
-                        'type'           => 'aller_simple',
+                        'type'           => 'aller_simple'
                     ]) }}" class="popular-route-card text-decoration-none">
                         <div class="text-white fw-bold">{{ $route[0] }} → {{ $route[1] }}</div>
                         <div class="text-white opacity-75 small">{{ $route[2] }}</div>
@@ -232,7 +233,6 @@
 
 @push('scripts')
 <script>
-// Tab toggle
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -240,11 +240,17 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         const type = this.dataset.type;
         document.getElementById('flightType').value = type;
         const retour = document.getElementById('returnDateWrapper');
-        retour.style.display = type === 'aller_retour' ? '' : 'none';
+        if (type === 'aller_retour') {
+            retour.style.display = '';
+            retour.querySelector('input').required = true;
+        } else {
+            retour.style.display = 'none';
+            retour.querySelector('input').required = false;
+            retour.querySelector('input').value = '';
+        }
     });
 });
 
-// Swap airports
 document.getElementById('swapBtn').addEventListener('click', function () {
     const dep = document.querySelector('[name="departure_code"]');
     const arr = document.querySelector('[name="arrival_code"]');
@@ -252,9 +258,6 @@ document.getElementById('swapBtn').addEventListener('click', function () {
     dep.value = arr.value;
     arr.value = tmp;
 });
-
-// Initialize — show return date for round trip by default
-document.getElementById('returnDateWrapper').style.display = '';
 </script>
 @endpush
 

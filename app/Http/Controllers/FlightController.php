@@ -33,13 +33,14 @@ class FlightController extends Controller
         $departureAirport = Airport::where('code', $request->departure_code)->first();
         $arrivalAirport   = Airport::where('code', $request->arrival_code)->first();
 
+        // Outbound flights
         $outboundQuery = Flight::with(['departureAirport', 'arrivalAirport'])
             ->where('departure_airport_id', $departureAirport->id)
             ->where('arrival_airport_id',   $arrivalAirport->id)
             ->where('class',                $request->class)
             ->where('available_seats',      '>=', $request->passengers);
 
-        // Only filter by date if one was provided
+        // Only apply date filter if a date was provided
         if ($request->filled('departure_date')) {
             $outboundQuery->whereBetween('departure_at', [
                 $request->departure_date . ' 00:00:00',
@@ -52,6 +53,7 @@ class FlightController extends Controller
 
         $outboundFlights = $outboundQuery->orderBy('departure_at')->get();
 
+        // Return flights (aller-retour only)
         $returnFlights = collect();
         if ($request->type === 'aller_retour') {
             $returnQuery = Flight::with(['departureAirport', 'arrivalAirport'])
@@ -60,7 +62,6 @@ class FlightController extends Controller
                 ->where('class',                $request->class)
                 ->where('available_seats',      '>=', $request->passengers);
 
-            // Only filter by return date if one was provided
             if ($request->filled('return_date')) {
                 $returnQuery->whereBetween('departure_at', [
                     $request->return_date . ' 00:00:00',
@@ -72,8 +73,11 @@ class FlightController extends Controller
         }
 
         return view('flights.results', compact(
-            'outboundFlights', 'returnFlights',
-            'departureAirport', 'arrivalAirport', 'request'
+            'outboundFlights',
+            'returnFlights',
+            'departureAirport',
+            'arrivalAirport',
+            'request'
         ));
     }
 
@@ -162,6 +166,7 @@ class FlightController extends Controller
         $flight->decrement('available_seats', $request->passengers);
         if ($returnFlight) $returnFlight->decrement('available_seats', $request->passengers);
 
-        return redirect()->route('dashboard')->with('success', 'Booking confirmed!');
+        return redirect()->route('dashboard')
+            ->with('success', 'Booking confirmed!');
     }
 }
