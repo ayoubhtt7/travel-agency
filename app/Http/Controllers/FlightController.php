@@ -44,7 +44,7 @@ class FlightController extends Controller
         $request->validate([
             'departure_code' => 'required|exists:airports,code',
             'arrival_code'   => 'required|exists:airports,code|different:departure_code',
-            'departure_date' => 'required|date',
+            'departure_date' => 'nullable|date', // ✅ NOW OPTIONAL
             'return_date'    => 'nullable|date',
             'passengers'     => 'required|integer|min:1|max:9',
             'class'          => 'required|in:economy,business,first',
@@ -56,15 +56,19 @@ class FlightController extends Controller
         $departureAirport = Airport::whereCode($request->departure_code)->firstOrFail();
         $arrivalAirport   = Airport::whereCode($request->arrival_code)->firstOrFail();
 
-        $depStart = $request->departure_date . ' 00:00:00';
-        $depEnd   = $request->departure_date . ' 23:59:59';
-
         $outboundQuery = Flight::with(['departureAirport', 'arrivalAirport'])
             ->where('departure_airport_id', $departureAirport->id)
             ->where('arrival_airport_id', $arrivalAirport->id)
             ->where('class', $request->class)
-            ->whereBetween('departure_at', [$depStart, $depEnd])
             ->where('available_seats', '>=', $request->passengers);
+
+        // ✅ APPLY DATE ONLY IF PROVIDED
+        if ($request->departure_date) {
+            $depStart = $request->departure_date . ' 00:00:00';
+            $depEnd   = $request->departure_date . ' 23:59:59';
+
+            $outboundQuery->whereBetween('departure_at', [$depStart, $depEnd]);
+        }
 
         if ($request->boolean('with_baggage')) {
             $outboundQuery->where('with_baggage', true);
@@ -78,18 +82,23 @@ class FlightController extends Controller
 
         $returnFlights = collect();
 
+        // ✅ RETURN FLIGHTS ONLY IF ROUNDTRIP + DATE PROVIDED
         if ($request->type === 'roundtrip' && $request->return_date) {
-            $retStart = $request->return_date . ' 00:00:00';
-            $retEnd   = $request->return_date . ' 23:59:59';
 
-            $returnFlights = Flight::with(['departureAirport', 'arrivalAirport'])
+            $returnQuery = Flight::with(['departureAirport', 'arrivalAirport'])
                 ->where('departure_airport_id', $arrivalAirport->id)
                 ->where('arrival_airport_id', $departureAirport->id)
                 ->where('class', $request->class)
-                ->whereBetween('departure_at', [$retStart, $retEnd])
-                ->where('available_seats', '>=', $request->passengers)
-                ->orderBy('departure_at')
-                ->get();
+                ->where('available_seats', '>=', $request->passengers);
+
+            if ($request->return_date) {
+                $retStart = $request->return_date . ' 00:00:00';
+                $retEnd   = $request->return_date . ' 23:59:59';
+
+                $returnQuery->whereBetween('departure_at', [$retStart, $retEnd]);
+            }
+
+            $returnFlights = $returnQuery->orderBy('departure_at')->get();
         }
 
         return view('flights.results', compact(
