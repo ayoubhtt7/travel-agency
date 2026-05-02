@@ -14,7 +14,6 @@ class AdminFlightController extends Controller
         $flights = Flight::with(['departureAirport', 'arrivalAirport'])
             ->latest()
             ->paginate(20);
-
         return view('admin.flights.index', compact('flights'));
     }
 
@@ -47,9 +46,9 @@ class AdminFlightController extends Controller
             $rules['return_flight_number'] = 'nullable|string|max:20';
         }
 
-        $validated    = $request->validate($rules);
-        $withBaggage  = $request->boolean('with_baggage');
-        $isDirect     = $request->boolean('is_direct');
+        $validated   = $request->validate($rules);
+        $withBaggage = $request->boolean('with_baggage');
+        $isDirect    = $request->boolean('is_direct');
 
         Flight::create([
             'departure_airport_id' => $validated['departure_airport_id'],
@@ -83,7 +82,6 @@ class AdminFlightController extends Controller
                 'with_baggage'         => $withBaggage,
                 'is_direct'            => $isDirect,
             ]);
-
             return redirect()->route('admin.flights.index')
                 ->with('success', 'Round trip created — 2 flights added.');
         }
@@ -105,7 +103,6 @@ class AdminFlightController extends Controller
             'arrival_airport_id'   => 'required|exists:airports,id|different:departure_airport_id',
             'airline'              => 'required|string|max:100',
             'flight_number'        => 'required|string|max:20',
-            'type'                 => 'required|in:aller_simple,aller_retour,direct',
             'class'                => 'required|in:economique,eco_premium,affaires,premiere',
             'departure_at'         => 'required|date',
             'arrival_at'           => 'required|date|after:departure_at',
@@ -114,6 +111,11 @@ class AdminFlightController extends Controller
             'with_baggage'         => 'nullable|boolean',
             'is_direct'            => 'nullable|boolean',
         ]);
+
+        // Use submitted type if valid, otherwise keep existing value
+        $allowedTypes = ['aller_simple', 'aller_retour', 'direct'];
+        $type = $request->input('type');
+        $validated['type'] = in_array($type, $allowedTypes) ? $type : $flight->type;
 
         $validated['with_baggage'] = $request->boolean('with_baggage');
         $validated['is_direct']    = $request->boolean('is_direct');
