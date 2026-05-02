@@ -41,20 +41,17 @@ class AdminFlightController extends Controller
             'is_direct'            => 'nullable|boolean',
         ];
 
-        // Extra validation for round trip
         if ($request->type === 'aller_retour') {
-            $rules['return_departure_at'] = 'required|date|after:arrival_at';
-            $rules['return_arrival_at']   = 'required|date|after:return_departure_at';
-            $rules['return_flight_number']= 'nullable|string|max:20';
+            $rules['return_departure_at']  = 'required|date|after:arrival_at';
+            $rules['return_arrival_at']    = 'required|date|after:return_departure_at';
+            $rules['return_flight_number'] = 'nullable|string|max:20';
         }
 
-        $validated = $request->validate($rules);
+        $validated    = $request->validate($rules);
+        $withBaggage  = $request->boolean('with_baggage');
+        $isDirect     = $request->boolean('is_direct');
 
-        $withBaggage = $request->boolean('with_baggage');
-        $isDirect    = $request->boolean('is_direct');
-
-        // Create outbound flight
-        $outbound = Flight::create([
+        Flight::create([
             'departure_airport_id' => $validated['departure_airport_id'],
             'arrival_airport_id'   => $validated['arrival_airport_id'],
             'airline'              => $validated['airline'],
@@ -69,15 +66,14 @@ class AdminFlightController extends Controller
             'is_direct'            => $isDirect,
         ]);
 
-        // If round trip — create return flight with airports swapped
         if ($request->type === 'aller_retour') {
             Flight::create([
-                'departure_airport_id' => $validated['arrival_airport_id'],   // swapped
-                'arrival_airport_id'   => $validated['departure_airport_id'], // swapped
+                'departure_airport_id' => $validated['arrival_airport_id'],
+                'arrival_airport_id'   => $validated['departure_airport_id'],
                 'airline'              => $validated['airline'],
                 'flight_number'        => $request->filled('return_flight_number')
-                                            ? $request->return_flight_number
-                                            : $validated['flight_number'],
+                    ? $request->return_flight_number
+                    : $validated['flight_number'],
                 'type'                 => 'aller_retour',
                 'class'                => $validated['class'],
                 'departure_at'         => $validated['return_departure_at'],
@@ -89,7 +85,7 @@ class AdminFlightController extends Controller
             ]);
 
             return redirect()->route('admin.flights.index')
-                ->with('success', 'Round trip created — 2 flights added successfully.');
+                ->with('success', 'Round trip created — 2 flights added.');
         }
 
         return redirect()->route('admin.flights.index')
