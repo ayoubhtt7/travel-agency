@@ -18,7 +18,7 @@ class FlightController extends Controller
 
     public function search(Request $request)
     {
-        // ✅ FIX mappings
+        // ✅ FIX mapp
         $classMap = [
             'economique' => 'economy',
             'eco_premium' => 'business',
