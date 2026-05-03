@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\FlightBookingConfirmed;
 use App\Models\Airport;
 use App\Models\Flight;
 use App\Models\FlightBooking;
 use App\Models\FlightPassenger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class FlightController extends Controller
 {
@@ -18,12 +20,11 @@ class FlightController extends Controller
 
     public function search(Request $request)
     {
-        // ✅ FIX mapp
         $classMap = [
-            'economique' => 'economy',
+            'economique'  => 'economy',
             'eco_premium' => 'business',
-            'affaires' => 'business',
-            'premiere' => 'first',
+            'affaires'    => 'business',
+            'premiere'    => 'first',
         ];
 
         $typeMap = [
@@ -33,7 +34,7 @@ class FlightController extends Controller
 
         $request->merge([
             'class' => $classMap[$request->class] ?? $request->class,
-            'type'  => $typeMap[$request->type] ?? $request->type,
+            'type'  => $typeMap[$request->type]   ?? $request->type,
         ]);
 
         $request->validate([
@@ -156,7 +157,20 @@ class FlightController extends Controller
         $flight->decrement('available_seats', $request->passengers);
         if ($returnFlight) $returnFlight->decrement('available_seats', $request->passengers);
 
+        // ✉️ Confirmation email
+        Mail::to(auth()->user()->email)
+            ->send(new FlightBookingConfirmed(
+                $booking->load(
+                    'flight.departureAirport',
+                    'flight.arrivalAirport',
+                    'returnFlight.departureAirport',
+                    'returnFlight.arrivalAirport',
+                    'passengerDetails',
+                    'user'
+                )
+            ));
+
         return redirect()->route('dashboard')
-            ->with('success', 'Booking confirmed!');
+            ->with('success', 'Flight booked! A confirmation email has been sent.');
     }
 }
