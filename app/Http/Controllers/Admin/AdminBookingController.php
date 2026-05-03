@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BookingConfirmed;
+use App\Mail\BookingCancelled;
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class AdminBookingController extends Controller
 {
@@ -26,7 +29,25 @@ class AdminBookingController extends Controller
             'status' => 'required|in:pending,confirmed,cancelled',
         ]);
 
-        $booking->update(['status' => $request->status]);
+        $oldStatus = $booking->status;
+        $newStatus = $request->status;
+
+        $booking->update(['status' => $newStatus]);
+
+        // ✉️ Only send email if status actually changed
+        if ($oldStatus !== $newStatus) {
+            $booking->load('user', 'trip.destination');
+
+            if ($newStatus === 'confirmed') {
+                Mail::to($booking->user->email)
+                    ->send(new BookingConfirmed($booking));
+            }
+
+            if ($newStatus === 'cancelled') {
+                Mail::to($booking->user->email)
+                    ->send(new BookingCancelled($booking));
+            }
+        }
 
         return back()->with('success', 'Booking updated successfully.');
     }
