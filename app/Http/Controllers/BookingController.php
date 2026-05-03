@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\BookingConfirmed;
-use App\Mail\BookingCancelled;
 use App\Models\Booking;
 use App\Models\Trip;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 
 class BookingController extends Controller
 {
@@ -37,7 +34,7 @@ class BookingController extends Controller
 
         $total = $trip->price * $request->number_of_persons;
 
-        $booking = Booking::create([
+        Booking::create([
             'user_id'           => auth()->id(),
             'trip_id'           => $trip->id,
             'number_of_persons' => $request->number_of_persons,
@@ -47,12 +44,7 @@ class BookingController extends Controller
 
         $trip->decrement('available_seats', $request->number_of_persons);
 
-        // ✉️ Confirmation email
-        Mail::to($booking->user->email)
-            ->send(new BookingConfirmed($booking->load('trip.destination', 'user')));
-
-        return redirect()->route('trips.index')
-            ->with('success', 'Booking successful! A confirmation email has been sent.');
+        return redirect()->route('trips.index')->with('success', 'Booking successful!');
     }
 
     public function destroy(Booking $booking)
@@ -61,17 +53,9 @@ class BookingController extends Controller
             abort(403);
         }
 
-        // Load relationships needed for the email before deleting
-        $booking->load('trip.destination', 'user');
-
         $booking->trip->increment('available_seats', $booking->number_of_persons);
-
-        // ✉️ Cancellation email
-        Mail::to($booking->user->email)
-            ->send(new BookingCancelled($booking));
-
         $booking->delete();
 
-        return back()->with('success', 'Booking cancelled. A confirmation email has been sent.');
+        return back()->with('success', 'Booking cancelled.');
     }
 }
