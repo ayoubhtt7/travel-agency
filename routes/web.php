@@ -103,9 +103,6 @@ Route::middleware(['auth', 'admin'])
 
 require __DIR__ . '/auth.php';
 
-
-<?php
-
 // ============================================================
 // ADD THESE IMPORTS at the top of web.php
 // ============================================================
