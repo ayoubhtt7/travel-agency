@@ -44,7 +44,7 @@ class BookingController extends Controller
 
         $trip->decrement('available_seats', $request->number_of_persons);
 
-        return redirect()->route('trips.index')->with('success', 'Booking successful!');
+        return redirect()->route('booking.addons', $booking->id)->with('success', 'Trip booked! Add a hotel or car rental below.');
     }
 
     public function destroy(Booking $booking)

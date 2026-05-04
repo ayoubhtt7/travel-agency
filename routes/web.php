@@ -12,7 +12,12 @@ use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminFlightController;
 use App\Http\Controllers\Admin\AdminFlightBookingController;
-
+use App\Http\Controllers\CarRentalController;
+use App\Http\Controllers\HotelController;
+use App\Http\Controllers\Admin\AdminCarRentalController;
+use App\Http\Controllers\Admin\AdminCarBookingController;
+use App\Http\Controllers\Admin\AdminHotelController;
+use App\Http\Controllers\Admin\AdminHotelBookingController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -97,3 +102,88 @@ Route::middleware(['auth', 'admin'])
 */
 
 require __DIR__ . '/auth.php';
+
+
+<?php
+
+// ============================================================
+// ADD THESE IMPORTS at the top of web.php
+// ============================================================
+
+
+
+// ============================================================
+// PUBLIC ROUTES — add alongside existing /trips and /flights
+// ============================================================
+Route::get('/cars', [CarRentalController::class, 'index'])->name('cars.index');
+Route::get('/hotels', [HotelController::class, 'index'])->name('hotels.index');
+Route::get('/hotels/{hotel}', [HotelController::class, 'show'])->name('hotels.show');
+
+
+// ============================================================
+// AUTHENTICATED ROUTES — add inside existing auth middleware group
+// ============================================================
+Route::middleware('auth')->group(function () {
+
+    // ... your existing routes ...
+
+    // Trip booking add-ons page (shown after a trip is booked)
+    Route::get('/bookings/{booking}/addons', function (\App\Models\Booking $booking) {
+        abort_if($booking->user_id !== auth()->id(), 403);
+        $destination = $booking->trip->destination;
+        $hotels = \App\Models\Hotel::where('destination_id', $destination?->id)
+            ->with('rooms')
+            ->get();
+        $cars = \App\Models\CarRental::where('destination_id', $destination?->id)
+            ->where('available_units', '>', 0)
+            ->get();
+        return view('bookings.addons', compact('booking', 'hotels', 'cars'));
+    })->name('booking.addons');
+
+    // Car rentals
+    Route::post('/cars/book', [CarRentalController::class, 'book'])->name('cars.book');
+    Route::delete('/cars/bookings/{carBooking}', [CarRentalController::class, 'destroy'])
+        ->name('cars.bookings.destroy');
+
+    // Hotels
+    Route::post('/hotels/book', [HotelController::class, 'book'])->name('hotels.book');
+    Route::delete('/hotels/bookings/{hotelBooking}', [HotelController::class, 'destroy'])
+        ->name('hotels.bookings.destroy');
+});
+
+
+// ============================================================
+// ADMIN ROUTES — add inside existing admin middleware group
+// ============================================================
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    // ... your existing admin routes ...
+
+    // Car rentals CRUD
+    Route::resource('cars', AdminCarRentalController::class);
+
+    // Car bookings (read + update status + delete)
+    Route::resource('car-bookings', AdminCarBookingController::class)
+        ->only(['index', 'show', 'update', 'destroy']);
+
+    // Hotels CRUD + nested room management
+    Route::resource('hotels', AdminHotelController::class);
+    Route::post('hotels/{hotel}/rooms', [AdminHotelController::class, 'storeRoom'])
+        ->name('hotels.rooms.store');
+    Route::delete('hotels/rooms/{room}', [AdminHotelController::class, 'destroyRoom'])
+        ->name('hotels.rooms.destroy');
+
+    // Hotel bookings (read + update status + delete)
+    Route::resource('hotel-bookings', AdminHotelBookingController::class)
+        ->only(['index', 'show', 'update', 'destroy']);
+});
+
+
+// ============================================================
+// ALSO UPDATE BookingController::store redirect (last line):
+// Replace:
+//     return redirect()->route('trips.index')->with('success', 'Booking successful!');
+// With:
+//     return redirect()->route('booking.addons', $booking->id)
+//                      ->with('success', 'Trip booked! Add a hotel or car rental below.');
+// ============================================================
