@@ -34,7 +34,7 @@ class BookingController extends Controller
 
         $total = $trip->price * $request->number_of_persons;
 
-        Booking::create([
+        $booking = Booking::create([
             'user_id'           => auth()->id(),
             'trip_id'           => $trip->id,
             'number_of_persons' => $request->number_of_persons,
@@ -44,7 +44,8 @@ class BookingController extends Controller
 
         $trip->decrement('available_seats', $request->number_of_persons);
 
-        return redirect()->route('booking.addons', $booking->id)->with('success', 'Trip booked! Add a hotel or car rental below.');
+        return redirect()->route('booking.addons', $booking->id)
+            ->with('success', 'Trip booked! Add a hotel or car rental below.');
     }
 
     public function destroy(Booking $booking)
