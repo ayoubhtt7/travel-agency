@@ -14,8 +14,93 @@
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     @auth
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                      {{ __('Dashboard') }}
+                        {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
+                        {{ __('Trips') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('flights.index')" :active="request()->routeIs('flights.*')">
+                        {{ __('Flights') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('cars.index')" :active="request()->routeIs('cars.*')">
+                        {{ __('Cars') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('hotels.index')" :active="request()->routeIs('hotels.*')">
+                        {{ __('Hotels') }}
+                    </x-nav-link>
+
+                    @if(auth()->user()->isAdmin())
+                    {{-- Admin dropdown --}}
+                    <div x-data="{ adminOpen: false }" class="relative flex items-center">
+                        <button @click="adminOpen = !adminOpen"
+                                :class="{ 'border-indigo-400 text-gray-900 dark:text-gray-100': request()->is('admin*'), 'border-transparent text-gray-500 dark:text-gray-400': !request()->is('admin*') }"
+                                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700 transition duration-150 ease-in-out focus:outline-none gap-1">
+                            {{ __('Admin') }}
+                            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div x-show="adminOpen" @click.outside="adminOpen = false"
+                             x-transition
+                             class="absolute top-full left-0 mt-1 w-52 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-100 dark:border-gray-700 z-50 py-1">
+
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                Bookings
+                            </div>
+                            <a href="{{ route('admin.bookings.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Trip Bookings
+                            </a>
+                            <a href="{{ route('admin.flight-bookings.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Flight Bookings
+                            </a>
+                            <a href="{{ route('admin.car-bookings.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Car Bookings
+                            </a>
+                            <a href="{{ route('admin.hotel-bookings.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Hotel Bookings
+                            </a>
+
+                            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                Catalogue
+                            </div>
+                            <a href="{{ route('admin.trips.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Trips
+                            </a>
+                            <a href="{{ route('admin.destinations.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Destinations
+                            </a>
+                            <a href="{{ route('admin.flights.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Flights
+                            </a>
+                            <a href="{{ route('admin.cars.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Cars
+                            </a>
+                            <a href="{{ route('admin.hotels.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Hotels
+                            </a>
+
+                            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                            <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                System
+                            </div>
+                            <a href="{{ route('admin.users.index') }}"
+                               class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                Users
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                     @endauth
                 </div>
             </div>
@@ -72,6 +157,38 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('trips.index')" :active="request()->routeIs('trips.*')">
+                {{ __('Trips') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('flights.index')" :active="request()->routeIs('flights.*')">
+                {{ __('Flights') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('cars.index')" :active="request()->routeIs('cars.*')">
+                {{ __('Cars') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('hotels.index')" :active="request()->routeIs('hotels.*')">
+                {{ __('Hotels') }}
+            </x-responsive-nav-link>
+
+            @if(auth()->user()->isAdmin())
+            <div class="pt-2 pb-1 border-t border-gray-200 dark:border-gray-600">
+                <div class="px-4 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin — Bookings</div>
+                <x-responsive-nav-link :href="route('admin.bookings.index')">Trip Bookings</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.flight-bookings.index')">Flight Bookings</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.car-bookings.index')">Car Bookings</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.hotel-bookings.index')">Hotel Bookings</x-responsive-nav-link>
+
+                <div class="px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin — Catalogue</div>
+                <x-responsive-nav-link :href="route('admin.trips.index')">Trips</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.destinations.index')">Destinations</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.flights.index')">Flights</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.cars.index')">Cars</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.hotels.index')">Hotels</x-responsive-nav-link>
+
+                <div class="px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin — System</div>
+                <x-responsive-nav-link :href="route('admin.users.index')">Users</x-responsive-nav-link>
+            </div>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->
