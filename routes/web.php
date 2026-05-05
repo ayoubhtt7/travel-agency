@@ -75,7 +75,7 @@ Route::middleware('auth')->group(function () {
         ->name('bookings.destroy');
 
     /*
-    | ADDONS PAGE
+    | ADDON
     */
     Route::get('/bookings/{booking}/addons', [BookingController::class, 'addons'])
         ->name('booking.addons');
