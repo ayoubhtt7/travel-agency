@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Booking;
 use App\Models\Trip;
 use Illuminate\Http\Request;
+use App\Models\Hotel;
+use App\Models\CarRental;
+
 
 class BookingController extends Controller
 {
@@ -59,4 +62,30 @@ class BookingController extends Controller
 
         return back()->with('success', 'Booking cancelled.');
     }
+
+
+
+
+
+
+
+public function addons(Booking $booking)
+{
+    $booking->load('trip.destination');
+
+    $destinationId = $booking->trip->destination_id;
+
+    $hotels = Hotel::where('destination_id', $destinationId)
+        ->with('rooms')
+        ->get();
+
+    $cars = CarRental::where('destination_id', $destinationId)
+        ->get();
+
+    return view('bookings.addons', compact(
+        'booking',
+        'hotels',
+        'cars'
+    ));
+}
 }

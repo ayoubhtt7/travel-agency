@@ -7,6 +7,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\FlightController;
 use App\Http\Controllers\CarRentalController;
 use App\Http\Controllers\HotelController;
+use App\Models\Booking;
 
 // ADMIN
 use App\Http\Controllers\Admin\AdminController;
@@ -35,11 +36,10 @@ Route::get('/trips/{id}', [TripController::class, 'show'])->name('trips.show');
 Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
 Route::get('/flights/search', [FlightController::class, 'search'])->name('flights.search');
 
-/* ✅ ADD THESE */
+/* Cars + Hotels */
 Route::get('/cars', [CarRentalController::class, 'index'])->name('cars.index');
 Route::get('/hotels', [HotelController::class, 'index'])->name('hotels.index');
 Route::get('/hotels/{hotel}', [HotelController::class, 'show'])->name('hotels.show');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -49,30 +49,60 @@ Route::get('/hotels/{hotel}', [HotelController::class, 'show'])->name('hotels.sh
 
 Route::middleware('auth')->group(function () {
 
+    /*
+    | Dashboard
+    */
     Route::get('/dashboard', function () {
-        $myBookings = auth()->user()->bookings()->latest()->get();
-        return view('dashboard', compact('myBookings'));
+
+        $user = auth()->user();
+
+        $myBookings = $user->bookings()->with('trip')->latest()->get();
+
+        $totalTrips = $myBookings->count();
+        $totalSpent = $myBookings->sum('total_price');
+
+        return view('dashboard', compact(
+            'myBookings',
+            'totalTrips',
+            'totalSpent'
+        ));
+
     })->name('dashboard');
 
-    // Trips
+    /*
+    | BOOKINGS FLOW
+    */
     Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
     Route::get('/trips/{id}/book', [BookingController::class, 'create'])->name('book.create');
     Route::post('/trips/{id}/book', [BookingController::class, 'store'])->name('book.store');
 
-    // Flights
+    /*
+    | ADDONS PAGE (FIXED - ONLY ONE ROUTE)
+    */
+    Route::get('/bookings/{booking}/addons', [BookingController::class, 'addons'])
+        ->name('booking.addons');
+
+    /*
+    | FLIGHTS
+    */
     Route::get('/flights/passengers', [FlightController::class, 'passengerForm'])->name('flights.passengers');
     Route::post('/flights/book', [FlightController::class, 'book'])->name('flights.book');
 
-    // Cars
+    /*
+    | CARS
+    */
     Route::post('/cars/book', [CarRentalController::class, 'book'])->name('cars.book');
 
-    // Hotels
+    /*
+    | HOTELS
+    */
     Route::post('/hotels/book', [HotelController::class, 'book'])->name('hotels.book');
 
-    // Profile
+    /*
+    | PROFILE
+    */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -98,7 +128,6 @@ Route::middleware(['auth', 'admin'])
         Route::resource('flight-bookings', AdminFlightBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
 
-        // ✅ ADD THESE
         Route::resource('cars', AdminCarRentalController::class);
         Route::resource('car-bookings', AdminCarBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
