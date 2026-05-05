@@ -115,7 +115,7 @@
                 <div class="text-muted small">{{ $flight->departureAirport->city ?? '' }}</div>
             </div>
             <div class="col-md-2 text-center">
-                <div class="text-muted small">{{ $flight->duration }}</div>
+                <div class="text-muted small">{{ $flight->departure_at }}</div>
                 <div class="flight-line">──────</div>
             </div>
             <div class="col-md-3 text-center">
