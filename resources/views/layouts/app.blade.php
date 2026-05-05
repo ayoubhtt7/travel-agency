@@ -91,22 +91,22 @@
 {{-- SIDEBAR --}}
 <aside id="appSidebar">
     <div class="sidebar-header">Navigation</div>
-
     <nav class="sidebar-nav">
-       
+        
         <a class="nav-link {{ request()->routeIs('flights.*') ? 'active' : '' }}" href="{{ route('flights.index') }}">
-            <i class="bi bi-globe2"></i> flights
+            <i class="bi bi-airplane"></i> flights
         </a>
 
         <a class="nav-link {{ request()->routeIs('trips.*') ? 'active' : '' }}" href="{{ route('trips.index') }}">
-            <i class="bi bi-globe2"></i> Explore Trips
+            <i class="bi bi-compass"></i> Explore Trips
         </a>
 
-        {{-- ✅ ADDED ONLY THESE TWO --}}
+        {{-- Cars --}}
         <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}">
-            <i class="bi bi-car-front"></i> Cars
+            <i class="bi bi-car-front-fill"></i> Cars
         </a>
 
+        {{-- Hotels --}}
         <a class="nav-link {{ request()->routeIs('hotels.*') ? 'active' : '' }}" href="{{ route('hotels.index') }}">
             <i class="bi bi-building"></i> Hotels
         </a>
@@ -144,25 +144,27 @@
             </a>
 
             <a class="nav-link {{ request()->routeIs('admin.destinations.*') ? 'active' : '' }}" href="{{ route('admin.destinations.index') }}">
-                <i class="bi bi-pin-map"></i> Destinations
+                <i class="bi bi-geo-alt"></i> Destinations
             </a>
 
             <a class="nav-link {{ request()->routeIs('admin.flights.*') ? 'active' : '' }}" href="{{ route('admin.flights.index') }}">
-                <i class="bi bi-pin-map"></i> flights
+                <i class="bi bi-airplane"></i> Flights
             </a>
 
             <a class="nav-link {{ request()->routeIs('admin.flight-bookings.*') ? 'active' : '' }}" href="{{ route('admin.flight-bookings.index') }}">
-                <i class="bi bi-pin-map"></i> flights booking
+                <i class="bi bi-journal-check"></i> Flight Bookings
             </a>
+
+            {{-- Cars --}}
             <a class="nav-link {{ request()->routeIs('admin.cars.*') ? 'active' : '' }}" href="{{ route('admin.cars.index') }}">
-                <i class="bi bi-car-front"></i> Cars
+                <i class="bi bi-car-front-fill"></i> Cars
             </a>
 
             <a class="nav-link {{ request()->routeIs('admin.car-bookings.*') ? 'active' : '' }}" href="{{ route('admin.car-bookings.index') }}">
                 <i class="bi bi-journal-check"></i> Car Bookings
             </a>
 
-            <!-- ✅ ADDED HOTELS -->
+            {{-- Hotels --}}
             <a class="nav-link {{ request()->routeIs('admin.hotels.*') ? 'active' : '' }}" href="{{ route('admin.hotels.index') }}">
                 <i class="bi bi-building"></i> Hotels
             </a>
@@ -174,13 +176,13 @@
         @endauth
 
         @guest
-        <a class="nav-link" href="{{ route('login') }}">
-            <i class="bi bi-box-arrow-in-right"></i> Login
-        </a>
+            <a class="nav-link" href="{{ route('login') }}">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
 
-        <a class="nav-link" href="{{ route('register') }}">
-            <i class="bi bi-person-plus"></i> Register
-        </a>
+            <a class="nav-link" href="{{ route('register') }}">
+                <i class="bi bi-person-plus"></i> Register
+            </a>
         @endguest
 
     </nav>
