@@ -17,19 +17,19 @@
             {{-- Type tabs --}}
             <ul class="nav nav-tabs border-0 mb-4" id="flightTypeTabs">
                 <li class="nav-item">
-                    <button class="nav-link active tab-btn" data-type="aller_retour" type="button">
+                    <button class="nav-link active tab-btn" data-type="roundtrip" type="button">
                         ✈ Round Trip
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link tab-btn" data-type="aller_simple" type="button">
+                    <button class="nav-link tab-btn" data-type="oneway" type="button">
                         → One Way
                     </button>
                 </li>
             </ul>
 
             <form action="{{ route('flights.search') }}" method="GET" id="flightSearchForm">
-                <input type="hidden" name="type" id="flightType" value="aller_retour">
+                <input type="hidden" name="type" id="flightType" value="roundtrip">
 
                 <div class="row g-3">
 
@@ -87,15 +87,13 @@
                     {{-- Departure date --}}
                     <div class="col-md-2">
                         <label class="form-label fw-semibold">📅 Departure Date</label>
-                        <input type="date" name="departure_date" class="form-control"
-                               placeholder="Any date">
+                        <input type="date" name="departure_date" class="form-control">
                     </div>
 
                     {{-- Return date --}}
                     <div class="col-md-2" id="returnDateWrapper">
                         <label class="form-label fw-semibold">📅 Return Date</label>
-                        <input type="date" name="return_date" class="form-control"
-                               placeholder="Any date">
+                        <input type="date" name="return_date" class="form-control">
                     </div>
 
                 </div>
@@ -112,14 +110,13 @@
                         </select>
                     </div>
 
-                    {{-- Class --}}
+                    {{-- Class (FIXED VALUES) --}}
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">💺 Class</label>
                         <select name="class" class="form-select">
-                            <option value="economique">Economy</option>
-                            <option value="eco_premium">Premium Economy</option>
-                            <option value="affaires">Business</option>
-                            <option value="premiere">First Class</option>
+                            <option value="economy">Economy</option>
+                            <option value="business">Business</option>
+                            <option value="first">First Class</option>
                         </select>
                     </div>
 
@@ -169,8 +166,8 @@
                         'arrival_code'   => $route[1],
                         'departure_date' => date('Y-m-d', strtotime('+7 days')),
                         'passengers'     => 1,
-                        'class'          => 'economique',
-                        'type'           => 'aller_simple'
+                        'class'          => 'economy',
+                        'type'           => 'oneway'
                     ]) }}" class="popular-route-card text-decoration-none">
                         <div class="text-white fw-bold">{{ $route[0] }} → {{ $route[1] }}</div>
                         <div class="text-white opacity-75 small">{{ $route[2] }}</div>
@@ -182,83 +179,5 @@
 
     </div>
 </div>
-
-@push('styles')
-<style>
-.flights-hero {
-    background: linear-gradient(135deg, #0a2342 0%, #1a4a8a 60%, #0d6efd 100%);
-    min-height: 100vh;
-    padding-top: 20px;
-}
-.flight-card {
-    background: white;
-    border-radius: 16px;
-    padding: 30px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.tab-btn {
-    border: none;
-    background: none;
-    padding: 8px 20px;
-    font-weight: 600;
-    color: #666;
-    border-bottom: 3px solid transparent;
-    border-radius: 0;
-}
-.tab-btn.active {
-    color: #0d6efd;
-    border-bottom-color: #0d6efd;
-    background: none;
-}
-.search-btn {
-    background: linear-gradient(135deg, #0d6efd, #0a58ca);
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-}
-.popular-route-card {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 10px;
-    padding: 12px;
-    display: block;
-    transition: 0.2s;
-}
-.popular-route-card:hover {
-    background: rgba(255,255,255,0.25);
-    transform: translateY(-2px);
-}
-</style>
-@endpush
-
-@push('scripts')
-<script>
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const type = this.dataset.type;
-        document.getElementById('flightType').value = type;
-        const retour = document.getElementById('returnDateWrapper');
-        if (type === 'aller_retour') {
-            retour.style.display = '';
-            retour.querySelector('input').required = true;
-        } else {
-            retour.style.display = 'none';
-            retour.querySelector('input').required = false;
-            retour.querySelector('input').value = '';
-        }
-    });
-});
-
-document.getElementById('swapBtn').addEventListener('click', function () {
-    const dep = document.querySelector('[name="departure_code"]');
-    const arr = document.querySelector('[name="arrival_code"]');
-    const tmp = dep.value;
-    dep.value = arr.value;
-    arr.value = tmp;
-});
-</script>
-@endpush
 
 @endsection

@@ -83,9 +83,18 @@ Route::middleware('auth')->group(function () {
     /*
     | FLIGHTS
     */
-    Route::get('/flights/passengers', [FlightController::class, 'passengerForm'])->name('flights.passengers');
-    Route::post('/flights/book', [FlightController::class, 'book'])->name('flights.book');
+        Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
+        Route::get('/flights/search', [FlightController::class, 'search'])->name('flights.search');
 
+        // Auth required
+        Route::middleware('auth')->group(function () {
+
+            Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengerForm'])
+                ->name('flights.passengers');
+
+            Route::post('/flights/book', [FlightController::class, 'book'])
+                ->name('flights.book');
+        });
     /*
     | CARS BOOKING
     */

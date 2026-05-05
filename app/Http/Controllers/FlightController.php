@@ -18,7 +18,7 @@ class FlightController extends Controller
 
     public function search(Request $request)
     {
-        // ✅ FIX mapp
+        // ✅ FIX: map frontend → DB values
         $classMap = [
             'economique' => 'economy',
             'eco_premium' => 'business',
@@ -49,19 +49,17 @@ class FlightController extends Controller
         $departureAirport = Airport::where('code', $request->departure_code)->first();
         $arrivalAirport   = Airport::where('code', $request->arrival_code)->first();
 
-        $outboundQuery = Flight::where('departure_airport_id', $departureAirport->id)
+        $outboundFlights = Flight::where('departure_airport_id', $departureAirport->id)
             ->where('arrival_airport_id', $arrivalAirport->id)
             ->where('class', $request->class)
-            ->where('available_seats', '>=', $request->passengers);
-
-        if ($request->filled('departure_date')) {
-            $outboundQuery->whereBetween('departure_at', [
-                $request->departure_date . ' 00:00:00',
-                $request->departure_date . ' 23:59:59',
-            ]);
-        }
-
-        $outboundFlights = $outboundQuery->get();
+            ->where('available_seats', '>=', $request->passengers)
+            ->when($request->departure_date, function ($q) use ($request) {
+                $q->whereBetween('departure_at', [
+                    $request->departure_date . ' 00:00:00',
+                    $request->departure_date . ' 23:59:59',
+                ]);
+            })
+            ->get();
 
         return view('flights.results', compact(
             'outboundFlights',
@@ -71,27 +69,24 @@ class FlightController extends Controller
         ));
     }
 
-    public function passengerForm(Request $request)
+    public function passengerForm(Flight $flight, Request $request)
     {
-        $request->validate([
-            'flight_id'        => 'required|exists:flights,id',
-            'return_flight_id' => 'nullable|exists:flights,id',
-            'passengers'       => 'required|integer|min:1|max:9',
-            'class'            => 'required|in:economique,eco_premium,affaires,premiere',
-            'type'             => 'required|in:aller_simple,aller_retour',
-        ]);
+        $passengerCount = $request->passengers ?? 1;
 
-        $flight       = Flight::with(['departureAirport', 'arrivalAirport'])->findOrFail($request->flight_id);
-        $returnFlight = $request->return_flight_id
-            ? Flight::with(['departureAirport', 'arrivalAirport'])->findOrFail($request->return_flight_id)
-            : null;
+        $returnFlight = null;
 
-        $passengerCount = (int) $request->passengers;
-        $totalPrice     = $flight->price * $passengerCount;
-        if ($returnFlight) $totalPrice += $returnFlight->price * $passengerCount;
+        if ($request->return_flight_id) {
+            $returnFlight = Flight::find($request->return_flight_id);
+        }
+
+        $totalPrice = $flight->price * $passengerCount;
 
         return view('flights.passengers', compact(
-            'flight', 'returnFlight', 'request', 'passengerCount', 'totalPrice'
+            'flight',
+            'returnFlight',
+            'passengerCount',
+            'totalPrice',
+            'request'
         ));
     }
 
@@ -101,17 +96,9 @@ class FlightController extends Controller
             'flight_id'                   => 'required|exists:flights,id',
             'return_flight_id'            => 'nullable|exists:flights,id',
             'passengers'                  => 'required|integer|min:1|max:9',
-            'class'                       => 'required|in:economique,eco_premium,affaires,premiere',
-            'type'                        => 'required|in:aller_simple,aller_retour',
+            'class'                       => 'required|in:economy,business,first',
+            'type'                        => 'required|in:oneway,roundtrip',
             'passenger'                   => 'required|array',
-            'passenger.*.first_name'      => 'required|string|max:100',
-            'passenger.*.last_name'       => 'required|string|max:100',
-            'passenger.*.passport_number' => 'required|string|max:50',
-            'passenger.*.date_of_birth'   => 'required|date|before:today',
-            'passenger.*.gender'          => 'required|in:male,female',
-            'passenger.*.type'            => 'required|in:adult,child,infant',
-            'passenger.*.nationality'     => 'required|string|max:100',
-            'passenger.*.passport_expiry' => 'required|date|after:today',
         ]);
 
         $flight = Flight::findOrFail($request->flight_id);
@@ -154,7 +141,10 @@ class FlightController extends Controller
         }
 
         $flight->decrement('available_seats', $request->passengers);
-        if ($returnFlight) $returnFlight->decrement('available_seats', $request->passengers);
+
+        if ($returnFlight) {
+            $returnFlight->decrement('available_seats', $request->passengers);
+        }
 
         return redirect()->route('dashboard')
             ->with('success', 'Booking confirmed!');
