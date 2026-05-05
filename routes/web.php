@@ -70,8 +70,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/trips/{id}/book', [BookingController::class, 'create'])->name('book.create');
     Route::post('/trips/{id}/book', [BookingController::class, 'store'])->name('book.store');
 
+    // ✅ THIS IS THE FIX (DELETE ROUTE)
+    Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])
+        ->name('bookings.destroy');
+
     /*
-    | ADDONS PAGE (FIXED - ONLY ONE ROUTE)
+    | ADDONS PAGE
     */
     Route::get('/bookings/{booking}/addons', [BookingController::class, 'addons'])
         ->name('booking.addons');
@@ -94,8 +98,10 @@ Route::middleware('auth')->group(function () {
 
     /*
     | PROFILE
-    */
+        */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 /*
