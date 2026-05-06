@@ -39,13 +39,21 @@ class AdminBookingController extends Controller
             $booking->load('user', 'trip.destination');
 
             if ($newStatus === 'confirmed') {
-                Mail::to($booking->user->email)
-                    ->send(new BookingConfirmed($booking));
+                try {
+                    Mail::to($booking->user->email)
+                        ->send(new BookingConfirmed($booking));
+                } catch (\Exception $e) {
+                    \Log::error('BookingConfirmed mail failed: ' . $e->getMessage());
+                }
             }
 
             if ($newStatus === 'cancelled') {
-                Mail::to($booking->user->email)
-                    ->send(new BookingCancelled($booking));
+                try {
+                    Mail::to($booking->user->email)
+                        ->send(new BookingCancelled($booking));
+                } catch (\Exception $e) {
+                    \Log::error('BookingCancelled mail failed: ' . $e->getMessage());
+                }
             }
         }
 
