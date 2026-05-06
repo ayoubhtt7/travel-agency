@@ -9,37 +9,108 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
-        html,body{height:100%;margin:0}
-        body{display:flex;flex-direction:column;background:#f5f6fa}
+        /* Reset */
+        html, body { height: 100%; margin: 0; }
+        body { display: flex; flex-direction: column; background: #f5f6fa; }
 
-        .app-navbar{position:sticky;top:0;z-index:1030;background:#0f172a;height:56px;box-shadow:0 2px 8px rgba(0,0,0,.35)}
-        .app-navbar .navbar-brand{font-weight:700;letter-spacing:.5px;color:#38bdf8!important}
+        /* Navbar: fixed to top, always visible */
+        .app-navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1030;
+            height: 56px;
+            background: #0f172a;
+            box-shadow: 0 2px 8px rgba(0,0,0,.35);
+        }
+        .app-navbar .navbar-brand { font-weight: 700; letter-spacing: .5px; color: #38bdf8 !important; }
 
-        #appSidebar{position:fixed;top:56px;left:0;bottom:0;width:240px;background:#1e293b;color:#cbd5e1;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s ease;z-index:1020;overflow-y:auto}
-        #appSidebar.open{transform:translateX(0)}
+        /* Sidebar: fixed, starts below the fixed navbar */
+        #appSidebar {
+            position: fixed;
+            top: 56px; left: 0; bottom: 0;
+            width: 240px;
+            background: #1e293b;
+            color: #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(-100%);
+            transition: transform .28s ease;
+            z-index: 1020;
+            overflow-y: auto;
+        }
+        #appSidebar.open { transform: translateX(0); }
 
-        .sidebar-header{padding:1.25rem 1.25rem .75rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#64748b;border-bottom:1px solid #334155}
-        .sidebar-nav{padding:.5rem 0;flex:1}
-        .sidebar-nav .nav-link{display:flex;align-items:center;gap:.65rem;padding:.6rem 1.25rem;color:#94a3b8;font-size:.875rem;transition:background .15s,color .15s}
-        .sidebar-nav .nav-link:hover,.sidebar-nav .nav-link.active{background:#334155;color:#f1f5f9}
-        .sidebar-nav .nav-link i{font-size:1rem;width:1.2rem;text-align:center}
+        .sidebar-header {
+            padding: 1.25rem 1.25rem .75rem;
+            font-size: .7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: #64748b; border-bottom: 1px solid #334155;
+        }
+        .sidebar-nav { padding: .5rem 0; flex: 1; }
+        .sidebar-nav .nav-link {
+            display: flex; align-items: center; gap: .65rem;
+            padding: .6rem 1.25rem;
+            color: #94a3b8; font-size: .875rem;
+            transition: background .15s, color .15s;
+        }
+        .sidebar-nav .nav-link:hover,
+        .sidebar-nav .nav-link.active { background: #334155; color: #f1f5f9; }
+        .sidebar-nav .nav-link i { font-size: 1rem; width: 1.2rem; text-align: center; }
 
-        .sidebar-section-label{padding:.75rem 1.25rem .25rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#475569}
+        .sidebar-section-label {
+            padding: .75rem 1.25rem .25rem;
+            font-size: .68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: #475569;
+        }
 
-        .sidebar-user{padding:1rem 1.25rem;border-top:1px solid #334155;font-size:.8rem;color:#64748b;display:flex;align-items:center;gap:.6rem}
-        .sidebar-user .avatar{width:30px;height:30px;border-radius:50%;background:#38bdf8;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;color:#0f172a;flex-shrink:0}
+        .sidebar-user {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid #334155;
+            font-size: .8rem; color: #64748b;
+            display: flex; align-items: center; gap: .6rem;
+        }
+        .sidebar-user .avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: #38bdf8;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: .75rem; color: #0f172a; flex-shrink: 0;
+        }
 
-        #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1015}
-        #sidebarOverlay.show{display:block}
+        /* Overlay (mobile) */
+        #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1015; }
+        #sidebarOverlay.show { display: block; }
 
-        .app-wrapper{display:flex;flex:1;flex-direction:column;transition:margin-left .28s ease}
-        .app-main{flex:1;padding:1.5rem}
-        .app-footer{text-align:center;padding:1rem;font-size:.8rem;color:#94a3b8;border-top:1px solid #e2e8f0;background:#fff}
+        /* Main wrapper: push down by navbar height */
+        .app-wrapper {
+            display: flex; flex: 1; flex-direction: column;
+            margin-top: 56px;
+            transition: margin-left .28s ease;
+        }
+        .app-main { flex: 1; padding: 1.5rem; }
+        .app-footer {
+            text-align: center; padding: 1rem;
+            font-size: .8rem; color: #94a3b8;
+            border-top: 1px solid #e2e8f0; background: #fff;
+        }
 
-        @media(min-width:992px){
-            #appSidebar{transform:translateX(0)!important}
-            .app-wrapper{margin-left:240px}
-            #sidebarOverlay{display:none!important}
+        /* Desktop: sidebar always visible */
+        @media (min-width: 992px) {
+            #appSidebar { transform: translateX(0) !important; }
+            .app-wrapper { margin-left: 240px; }
+            #sidebarOverlay { display: none !important; }
+        }
+
+        /* Fix oversized Bootstrap pagination arrows injected by Tailwind/Vite */
+        .pagination { --bs-pagination-font-size: 0.875rem; }
+        .pagination .page-link {
+            font-size: .875rem !important;
+            padding: .375rem .75rem !important;
+            line-height: 1.5 !important;
+        }
+        .pagination .page-link svg {
+            width: 1em !important;
+            height: 1em !important;
         }
     </style>
 

@@ -1,5 +1,73 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+    /* Hero: full bleed behind content area */
+    .flights-hero {
+        min-height: calc(100vh - 56px);
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+        margin: -1.5rem;
+        padding: 1.5rem;
+    }
+
+    /* Search card */
+    .flight-card {
+        background: rgba(255,255,255,0.97);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        max-width: 100%;
+    }
+
+    /* Tabs */
+    #flightTypeTabs .nav-link {
+        color: #64748b;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        padding: .5rem 1.25rem;
+        font-weight: 600;
+        transition: all .2s;
+    }
+    #flightTypeTabs .nav-link.active {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        color: #1d4ed8;
+    }
+
+    /* Swap button */
+    #swapBtn {
+        width: 42px; height: 42px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    /* Search button */
+    .search-btn {
+        background: linear-gradient(90deg, #2563eb, #1d4ed8);
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        letter-spacing: .3px;
+        transition: opacity .2s;
+    }
+    .search-btn:hover { opacity: .9; }
+
+    /* Popular route cards */
+    .popular-route-card {
+        display: block;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 10px;
+        padding: .6rem .9rem;
+        transition: background .2s;
+    }
+    .popular-route-card:hover { background: rgba(255,255,255,0.2); }
+
+    /* Return date toggle */
+    #returnDateWrapper.hidden { display: none !important; }
+</style>
+@endpush
+
 @section('content')
 
 <div class="flights-hero">
@@ -179,5 +247,35 @@
 
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Tab: round trip / one way
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const type = btn.dataset.type;
+            document.getElementById('flightType').value = type;
+            const wrapper = document.getElementById('returnDateWrapper');
+            if (type === 'oneway') {
+                wrapper.classList.add('hidden');
+                wrapper.querySelector('input').value = '';
+            } else {
+                wrapper.classList.remove('hidden');
+            }
+        });
+    });
+
+    // Swap departure / arrival airports
+    document.getElementById('swapBtn').addEventListener('click', () => {
+        const dep = document.querySelector('[name="departure_code"]');
+        const arr = document.querySelector('[name="arrival_code"]');
+        const tmp = dep.value;
+        dep.value = arr.value;
+        arr.value = tmp;
+    });
+</script>
+@endpush
 
 @endsection
