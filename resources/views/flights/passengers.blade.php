@@ -163,7 +163,17 @@
                         Total: <span class="text-primary">{{ number_format($totalPrice, 2) }} DA</span>
                     </div>
                 </div>
+                <div class="mb-3">
+                <label class="form-label fw-semibold">Payment Method</label>
 
+                <select name="payment_method" class="form-select" required>
+                    <option value="">Choose payment method</option>
+                    <option value="Credit Card">💳 Credit Card</option>
+                    <option value="PayPal">🅿️ PayPal</option>
+                    <option value="BaridiMob">📱 BaridiMob</option>
+                    <option value="Cash">💵 Cash</option>
+                </select>
+            </div>
                 <div class="col-md-4 text-end mt-3 mt-md-0">
                     <button type="submit" class="btn btn-primary btn-lg px-5">
                         Confirm Booking

@@ -7,6 +7,9 @@ use App\Models\Flight;
 use App\Models\FlightBooking;
 use App\Models\FlightPassenger;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\FlightTicketMail;
 
 class FlightController extends Controller
 {
@@ -93,12 +96,13 @@ class FlightController extends Controller
     public function book(Request $request)
     {
         $request->validate([
-            'flight_id'                   => 'required|exists:flights,id',
-            'return_flight_id'            => 'nullable|exists:flights,id',
-            'passengers'                  => 'required|integer|min:1|max:9',
-            'class'                       => 'required|in:economy,business,first',
-            'type'                        => 'required|in:oneway,roundtrip',
-            'passenger'                   => 'required|array',
+            'flight_id'         => 'required|exists:flights,id',
+            'return_flight_id'  => 'nullable|exists:flights,id',
+            'passengers'        => 'required|integer|min:1|max:9',
+            'class'             => 'required|in:economy,business,first',
+            'type'              => 'required|in:oneway,roundtrip',
+            'payment_method'    => 'required|string',
+            'passenger'         => 'required|array',
         ]);
 
         $flight = Flight::findOrFail($request->flight_id);
@@ -110,11 +114,15 @@ class FlightController extends Controller
         $total = $flight->price * $request->passengers;
 
         $returnFlight = null;
+
         if ($request->return_flight_id) {
+
             $returnFlight = Flight::findOrFail($request->return_flight_id);
+
             $total += $returnFlight->price * $request->passengers;
         }
 
+        // ✅ CREATE BOOKING
         $booking = FlightBooking::create([
             'user_id'          => auth()->id(),
             'flight_id'        => $flight->id,
@@ -122,11 +130,14 @@ class FlightController extends Controller
             'passengers'       => $request->passengers,
             'class'            => $request->class,
             'type'             => $request->type,
+            'payment_method'   => $request->payment_method,
             'total_price'      => $total,
             'status'           => 'confirmed',
         ]);
 
+        // ✅ SAVE PASSENGERS
         foreach ($request->passenger as $p) {
+
             FlightPassenger::create([
                 'flight_booking_id' => $booking->id,
                 'first_name'        => $p['first_name'],
@@ -140,13 +151,58 @@ class FlightController extends Controller
             ]);
         }
 
+        // ✅ UPDATE SEATS
         $flight->decrement('available_seats', $request->passengers);
 
         if ($returnFlight) {
             $returnFlight->decrement('available_seats', $request->passengers);
         }
 
+        // ✅ LOAD RELATIONS
+        $booking->load([
+            'user',
+            'flight.departureAirport',
+            'flight.arrivalAirport'
+        ]);
+
+        // ✅ CREATE PDF
+        $pdf = Pdf::loadView('pdf.flight-ticket', [
+            'booking' => $booking
+        ]);
+
+        // ✅ CREATE FOLDER IF NOT EXISTS
+        if (!file_exists(storage_path('app/public/tickets'))) {
+
+            mkdir(storage_path('app/public/tickets'), 0777, true);
+        }
+
+        // ✅ SAVE PDF
+        $pdfPath = storage_path(
+            'app/public/tickets/ticket-' . $booking->id . '.pdf'
+        );
+
+        $pdf->save($pdfPath);
+
+        // ✅ SEND EMAIL WITH PDF
+        try {
+
+            Mail::send(
+                'emails.flight-ticket',
+                ['booking' => $booking],
+                function ($message) use ($booking, $pdfPath) {
+
+                    $message->to($booking->user->email)
+                        ->subject('✈ Your Flight Ticket')
+                        ->attach($pdfPath);
+                }
+            );
+
+        } catch (\Exception $e) {
+
+            \Log::error($e->getMessage());
+        }
+
         return redirect()->route('dashboard')
-            ->with('success', 'Booking confirmed!');
+            ->with('success', 'Flight booked successfully! Ticket sent by email.');
     }
 }
