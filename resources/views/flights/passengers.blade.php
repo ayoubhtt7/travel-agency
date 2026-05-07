@@ -175,9 +175,26 @@
                 </select>
             </div>
                 <div class="col-md-4 text-end mt-3 mt-md-0">
-                    <button type="submit" class="btn btn-primary btn-lg px-5">
-                        Confirm Booking
-                    </button>
+                    <form action="{{ route('payment.process') }}" method="POST">
+                    @csrf
+
+                    <div class="card p-3 shadow-sm">
+                        <h5 class="mb-3">💳 Payment Details</h5>
+
+                        <input type="text" name="card_number" class="form-control mb-2"
+                            placeholder="Card Number (use 4242 4242 4242 4242)" required>
+
+                        <input type="text" name="expiry" class="form-control mb-2"
+                            placeholder="MM/YY" required>
+
+                        <input type="text" name="cvv" class="form-control mb-3"
+                            placeholder="CVV" required>
+
+                        <button class="btn btn-success w-100">
+                            Pay {{ number_format($totalPrice, 2) }} DA
+                        </button>
+                    </div>
+                </form>
                 </div>
             </div>
         </div>

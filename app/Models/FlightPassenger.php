@@ -35,4 +35,8 @@ class FlightPassenger extends Model
     {
         return $this->first_name . ' ' . $this->last_name;
     }
+    public function ticket()
+    {
+        return $this->hasOne(Ticket::class);
+    }
 }

@@ -6,22 +6,26 @@ use App\Models\Airport;
 use App\Models\Flight;
 use App\Models\FlightBooking;
 use App\Models\FlightPassenger;
+use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\FlightTicketMail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class FlightController extends Controller
 {
     public function index()
     {
-        $airports = Airport::orderBy('country_code')->orderBy('city')->get();
+        $airports = Airport::orderBy('country_code')
+            ->orderBy('city')
+            ->get();
+
         return view('flights.index', compact('airports'));
     }
 
     public function search(Request $request)
     {
-        // ✅ FIX: map frontend → DB values
         $classMap = [
             'economique' => 'economy',
             'eco_premium' => 'business',
@@ -43,24 +47,20 @@ class FlightController extends Controller
             'departure_code' => 'required|exists:airports,code',
             'arrival_code'   => 'required|exists:airports,code|different:departure_code',
             'departure_date' => 'nullable|date',
-            'return_date'    => 'nullable|date',
             'passengers'     => 'required|integer|min:1|max:9',
             'class'          => 'required|in:economy,business,first',
             'type'           => 'required|in:oneway,roundtrip',
         ]);
 
-        $departureAirport = Airport::where('code', $request->departure_code)->first();
-        $arrivalAirport   = Airport::where('code', $request->arrival_code)->first();
+        $departureAirport = Airport::where('code', $request->departure_code)->firstOrFail();
+        $arrivalAirport   = Airport::where('code', $request->arrival_code)->firstOrFail();
 
         $outboundFlights = Flight::where('departure_airport_id', $departureAirport->id)
             ->where('arrival_airport_id', $arrivalAirport->id)
             ->where('class', $request->class)
             ->where('available_seats', '>=', $request->passengers)
             ->when($request->departure_date, function ($q) use ($request) {
-                $q->whereBetween('departure_at', [
-                    $request->departure_date . ' 00:00:00',
-                    $request->departure_date . ' 23:59:59',
-                ]);
+                $q->whereDate('departure_at', $request->departure_date);
             })
             ->get();
 
@@ -76,13 +76,15 @@ class FlightController extends Controller
     {
         $passengerCount = $request->passengers ?? 1;
 
-        $returnFlight = null;
-
-        if ($request->return_flight_id) {
-            $returnFlight = Flight::find($request->return_flight_id);
-        }
+        $returnFlight = $request->return_flight_id
+            ? Flight::find($request->return_flight_id)
+            : null;
 
         $totalPrice = $flight->price * $passengerCount;
+
+        if ($returnFlight) {
+            $totalPrice += $returnFlight->price * $passengerCount;
+        }
 
         return view('flights.passengers', compact(
             'flight',
@@ -105,64 +107,95 @@ class FlightController extends Controller
             'passenger'         => 'required|array',
         ]);
 
-        $flight = Flight::findOrFail($request->flight_id);
+        DB::beginTransaction();
 
-        if ($flight->available_seats < $request->passengers) {
-            return back()->with('error', 'Not enough seats available.');
-        }
+        try {
+            $flight = Flight::lockForUpdate()->findOrFail($request->flight_id);
 
-        $total = $flight->price * $request->passengers;
+            if ($flight->available_seats < $request->passengers) {
+                return back()->with('error', 'Not enough seats available.');
+            }
 
-        $returnFlight = null;
+            $total = $flight->price * $request->passengers;
 
-        if ($request->return_flight_id) {
+            $returnFlight = null;
 
-            $returnFlight = Flight::findOrFail($request->return_flight_id);
+            if ($request->return_flight_id) {
 
-            $total += $returnFlight->price * $request->passengers;
-        }
+                $returnFlight = Flight::lockForUpdate()
+                    ->findOrFail($request->return_flight_id);
 
-        // ✅ CREATE BOOKING
-        $booking = FlightBooking::create([
-            'user_id'          => auth()->id(),
-            'flight_id'        => $flight->id,
-            'return_flight_id' => $request->return_flight_id,
-            'passengers'       => $request->passengers,
-            'class'            => $request->class,
-            'type'             => $request->type,
-            'payment_method'   => $request->payment_method,
-            'total_price'      => $total,
-            'status'           => 'confirmed',
-        ]);
+                if ($returnFlight->available_seats < $request->passengers) {
+                    return back()->with('error', 'Return flight not available.');
+                }
 
-        // ✅ SAVE PASSENGERS
-        foreach ($request->passenger as $p) {
+                $total += $returnFlight->price * $request->passengers;
+            }
 
-            FlightPassenger::create([
-                'flight_booking_id' => $booking->id,
-                'first_name'        => $p['first_name'],
-                'last_name'         => $p['last_name'],
-                'passport_number'   => $p['passport_number'],
-                'date_of_birth'     => $p['date_of_birth'],
-                'gender'            => $p['gender'],
-                'type'              => $p['type'],
-                'nationality'       => $p['nationality'],
-                'passport_expiry'   => $p['passport_expiry'],
+            // ✅ CREATE BOOKING
+            $booking = FlightBooking::create([
+                'user_id'          => auth()->id(),
+                'flight_id'        => $flight->id,
+                'return_flight_id' => $request->return_flight_id,
+                'passengers'       => $request->passengers,
+                'class'            => $request->class,
+                'type'             => $request->type,
+                'payment_method'   => $request->payment_method,
+                'total_price'      => $total,
+                'status'           => 'confirmed',
             ]);
+
+            // ✅ SAVE PASSENGERS
+            $createdPassengers = [];
+
+            foreach ($request->passenger as $p) {
+
+                $passenger = FlightPassenger::create([
+                    'flight_booking_id' => $booking->id,
+                    'first_name'        => $p['first_name'],
+                    'last_name'         => $p['last_name'],
+                    'passport_number'   => $p['passport_number'],
+                    'date_of_birth'     => $p['date_of_birth'],
+                    'gender'            => $p['gender'],
+                    'type'              => $p['type'],
+                    'nationality'       => $p['nationality'],
+                    'passport_expiry'   => $p['passport_expiry'],
+                ]);
+
+                $createdPassengers[] = $passenger;
+            }
+
+            // 🎟️ CREATE TICKETS
+            foreach ($createdPassengers as $passenger) {
+
+                Ticket::create([
+                    'flight_booking_id'   => $booking->id,
+                    'flight_passenger_id' => $passenger->id,
+                    'ticket_code'         => strtoupper('TK-' . Str::random(8)),
+                ]);
+            }
+
+            // ✅ UPDATE SEATS
+            $flight->decrement('available_seats', $request->passengers);
+
+            if ($returnFlight) {
+                $returnFlight->decrement('available_seats', $request->passengers);
+            }
+
+            DB::commit();
+
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+            return back()->with('error', 'Booking failed. Try again.');
         }
 
-        // ✅ UPDATE SEATS
-        $flight->decrement('available_seats', $request->passengers);
-
-        if ($returnFlight) {
-            $returnFlight->decrement('available_seats', $request->passengers);
-        }
-
-        // ✅ LOAD RELATIONS
+        // ✅ LOAD RELATIONS FOR PDF
         $booking->load([
             'user',
             'flight.departureAirport',
-            'flight.arrivalAirport'
+            'flight.arrivalAirport',
+            'tickets.passenger'
         ]);
 
         // ✅ CREATE PDF
@@ -170,27 +203,22 @@ class FlightController extends Controller
             'booking' => $booking
         ]);
 
-        // ✅ CREATE FOLDER IF NOT EXISTS
-        if (!file_exists(storage_path('app/public/tickets'))) {
+        $folder = storage_path('app/public/tickets');
 
-            mkdir(storage_path('app/public/tickets'), 0777, true);
+        if (!file_exists($folder)) {
+            mkdir($folder, 0777, true);
         }
 
-        // ✅ SAVE PDF
-        $pdfPath = storage_path(
-            'app/public/tickets/ticket-' . $booking->id . '.pdf'
-        );
+        $pdfPath = $folder . '/ticket-' . $booking->id . '.pdf';
 
         $pdf->save($pdfPath);
 
-        // ✅ SEND EMAIL WITH PDF
+        // ✅ SEND EMAIL
         try {
-
             Mail::send(
                 'emails.flight-ticket',
                 ['booking' => $booking],
                 function ($message) use ($booking, $pdfPath) {
-
                     $message->to($booking->user->email)
                         ->subject('✈ Your Flight Ticket')
                         ->attach($pdfPath);
@@ -198,11 +226,10 @@ class FlightController extends Controller
             );
 
         } catch (\Exception $e) {
-
             \Log::error($e->getMessage());
         }
 
         return redirect()->route('dashboard')
-            ->with('success', 'Flight booked successfully! Ticket sent by email.');
+            ->with('success', 'Flight booked successfully! Tickets generated & sent.');
     }
 }
