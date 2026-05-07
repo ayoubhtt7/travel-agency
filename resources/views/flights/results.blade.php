@@ -248,8 +248,13 @@
             </div>
 
             <div class="col-md-3 text-center">
-                <div class="time-display">{{ $flight->arrival_at->format('H:i') }}</div>
-                <div class="text-muted small">{{ $flight->arrival_at->format('d M Y') }}</div>
+                @if($flight->return_departure_at)
+                    <div class="time-display">{{ \Carbon\Carbon::parse($flight->return_departure_at)->format('H:i') }}</div>
+                    <div class="text-muted small">{{ \Carbon\Carbon::parse($flight->return_departure_at)->format('d M Y') }}</div>
+                @else
+                    <div class="time-display">{{ $flight->arrival_at->format('H:i') }}</div>
+                    <div class="text-muted small">{{ $flight->arrival_at->format('d M Y') }}</div>
+                @endif
                 <div class="text-muted small">{{ $flight->arrivalAirport->code ?? '' }}</div>
                 <div class="text-muted small">{{ $flight->arrivalAirport->city ?? '' }}</div>
             </div>
