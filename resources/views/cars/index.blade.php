@@ -164,6 +164,96 @@
 
             </div>
         </div>
+                {{-- Booking Modal --}}
+        @auth
+        <div class="modal fade" id="bookCar{{ $car->id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+
+                    <form action="{{ route('cars.book') }}" method="POST">
+                        @csrf
+
+                        <input type="hidden" name="car_rental_id" value="{{ $car->id }}">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                Rent — {{ $car->brand }} {{ $car->model }}
+                            </h5>
+
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal">
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Pick-up date
+                                </label>
+
+                                <input type="date"
+                                    name="pickup_date"
+                                    class="form-control"
+                                    min="{{ date('Y-m-d') }}"
+                                    required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Return date
+                                </label>
+
+                                <input type="date"
+                                    name="return_date"
+                                    class="form-control"
+                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                    required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    Pick-up location
+                                </label>
+
+                                <input type="text"
+                                    name="pickup_location"
+                                    class="form-control"
+                                    placeholder="e.g. Airport Terminal 1"
+                                    required>
+                            </div>
+
+                            <div class="alert alert-info small mb-0">
+                                <strong>
+                                    {{ number_format($car->price_per_day, 2) }} DA / day
+                                </strong>
+                                — total calculated on confirmation.
+                            </div>
+
+                        </div>
+
+                        <div class="modal-footer">
+
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-dismiss="modal">
+                                Cancel
+                            </button>
+
+                            <button type="submit"
+                                    class="btn btn-primary">
+                                Confirm Rental
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+        @endauth
         @endforeach
     </div>
     @endif
