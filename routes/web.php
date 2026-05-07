@@ -7,7 +7,6 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\FlightController;
 use App\Http\Controllers\CarRentalController;
 use App\Http\Controllers\HotelController;
-use App\Models\Booking;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,13 +43,19 @@ Route::get('/hotels/{hotel}', [HotelController::class, 'show'])->name('hotels.sh
 Route::middleware('auth')->group(function () {
 
     /*
+    |--------------------------------------------------------------------------
     | DASHBOARD
+    |--------------------------------------------------------------------------
     */
+
     Route::get('/dashboard', function () {
 
         $user = auth()->user();
 
-        $myBookings = $user->bookings()->with('trip')->latest()->get();
+        $myBookings = $user->bookings()
+            ->with('trip')
+            ->latest()
+            ->get();
 
         $totalTrips = $myBookings->count();
         $totalSpent = $myBookings->sum('total_price');
@@ -64,53 +69,76 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     /*
+    |--------------------------------------------------------------------------
     | BOOKINGS
+    |--------------------------------------------------------------------------
     */
-    Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
-    Route::get('/trips/{id}/book', [BookingController::class, 'create'])->name('book.create');
-    Route::post('/trips/{id}/book', [BookingController::class, 'store'])->name('book.store');
 
-    // ✅ THIS IS THE FIX (DELETE ROUTE)
+    Route::get('/bookings', [BookingController::class, 'index'])
+        ->name('bookings.index');
+
+    Route::get('/trips/{id}/book', [BookingController::class, 'create'])
+        ->name('book.create');
+
+    Route::post('/trips/{id}/book', [BookingController::class, 'store'])
+        ->name('book.store');
+
     Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])
         ->name('bookings.destroy');
 
     /*
-    | ADDON
+    |--------------------------------------------------------------------------
+    | BOOKING ADDONS
+    |--------------------------------------------------------------------------
     */
+
     Route::get('/bookings/{booking}/addons', [BookingController::class, 'addons'])
         ->name('booking.addons');
 
     /*
+    |--------------------------------------------------------------------------
     | FLIGHTS
+    |--------------------------------------------------------------------------
     */
-        Route::get('/flights', [FlightController::class, 'index'])->name('flights.index');
-        Route::get('/flights/search', [FlightController::class, 'search'])->name('flights.search');
 
-        // Auth required
-        Route::middleware('auth')->group(function () {
+    Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengerForm'])
+        ->name('flights.passengers');
 
-            Route::get('/flights/{flight}/passengers', [FlightController::class, 'passengerForm'])
-                ->name('flights.passengers');
-
-            Route::post('/flights/book', [FlightController::class, 'book'])
-                ->name('flights.book');
-        });
-    /*
-    | CARS BOOKING
-    */
-    Route::post('/cars/book', [CarRentalController::class, 'book'])->name('cars.book');
+    Route::post('/flights/book', [FlightController::class, 'book'])
+        ->name('flights.book');
 
     /*
-    | HOTELS BOOKING
+    |--------------------------------------------------------------------------
+    | CAR BOOKINGS
+    |--------------------------------------------------------------------------
     */
-    Route::post('/hotels/book', [HotelController::class, 'book'])->name('hotels.book');
+
+    Route::post('/cars/book', [CarRentalController::class, 'book'])
+        ->name('cars.book');
 
     /*
+    |--------------------------------------------------------------------------
+    | HOTEL BOOKINGS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/hotels/book', [HotelController::class, 'book'])
+        ->name('hotels.book');
+
+    /*
+    |--------------------------------------------------------------------------
     | PROFILE
-        */
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
 });
 
 /*
@@ -124,14 +152,34 @@ Route::middleware(['auth', 'admin'])
     ->name('admin.')
     ->group(function () {
 
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN DASHBOARD
+        |--------------------------------------------------------------------------
+        */
+
         Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
         Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'index'])
             ->name('dashboard');
 
+        /*
+        |--------------------------------------------------------------------------
+        | TRIPS / DESTINATIONS / FLIGHTS
+        |--------------------------------------------------------------------------
+        */
+
         Route::resource('trips', \App\Http\Controllers\Admin\AdminTripController::class);
+
         Route::resource('destinations', \App\Http\Controllers\Admin\AdminDestinationController::class);
+
         Route::resource('flights', \App\Http\Controllers\Admin\AdminFlightController::class);
+
+        /*
+        |--------------------------------------------------------------------------
+        | BOOKINGS
+        |--------------------------------------------------------------------------
+        */
 
         Route::resource('bookings', \App\Http\Controllers\Admin\AdminBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
@@ -139,13 +187,45 @@ Route::middleware(['auth', 'admin'])
         Route::resource('flight-bookings', \App\Http\Controllers\Admin\AdminFlightBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
 
+        /*
+        |--------------------------------------------------------------------------
+        | CARS
+        |--------------------------------------------------------------------------
+        */
+
         Route::resource('cars', \App\Http\Controllers\Admin\AdminCarRentalController::class);
+
         Route::resource('car-bookings', \App\Http\Controllers\Admin\AdminCarBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
 
+        /*
+        |--------------------------------------------------------------------------
+        | HOTELS
+        |--------------------------------------------------------------------------
+        */
+
         Route::resource('hotels', \App\Http\Controllers\Admin\AdminHotelController::class);
+
+        // Hotel Rooms
+        Route::post(
+            'hotels/{hotel}/rooms',
+            [\App\Http\Controllers\Admin\AdminHotelController::class, 'storeRoom']
+        )->name('hotels.rooms.store');
+
+        Route::delete(
+            'hotels/rooms/{room}',
+            [\App\Http\Controllers\Admin\AdminHotelController::class, 'destroyRoom']
+        )->name('hotels.rooms.destroy');
+
+        // Hotel Bookings
         Route::resource('hotel-bookings', \App\Http\Controllers\Admin\AdminHotelBookingController::class)
             ->only(['index', 'show', 'update', 'destroy']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | USERS
+        |--------------------------------------------------------------------------
+        */
 
         Route::resource('users', \App\Http\Controllers\Admin\AdminUserController::class)
             ->only(['index', 'update', 'destroy']);
