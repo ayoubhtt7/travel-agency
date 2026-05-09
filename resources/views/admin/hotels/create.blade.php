@@ -123,7 +123,9 @@
 <template id="roomTemplate">
     <div class="room-row border rounded p-3 mb-3 position-relative">
         <button type="button" class="btn-close position-absolute top-0 end-0 m-2 remove-room"></button>
+
         <div class="row g-3">
+
             <div class="col-md-3">
                 <label class="form-label small fw-semibold">Type</label>
                 <select name="rooms[__IDX__][type]" class="form-select form-select-sm">
@@ -134,28 +136,68 @@
                     <option value="family">Family</option>
                 </select>
             </div>
+
             <div class="col-md-2">
                 <label class="form-label small fw-semibold">Capacity</label>
-                <input type="number" name="rooms[__IDX__][capacity]" class="form-control form-control-sm" min="1" value="2">
+                <input type="number"
+                       name="rooms[__IDX__][capacity]"
+                       class="form-control form-control-sm"
+                       min="1"
+                       value="2">
             </div>
+
             <div class="col-md-3">
                 <label class="form-label small fw-semibold">Price/night (DA)</label>
-                <input type="number" name="rooms[__IDX__][price_per_night]" class="form-control form-control-sm" min="0" step="0.01" value="0">
+                <input type="number"
+                       name="rooms[__IDX__][price_per_night]"
+                       class="form-control form-control-sm"
+                       min="0"
+                       step="0.01"
+                       value="0">
             </div>
+
             <div class="col-md-2">
                 <label class="form-label small fw-semibold">Available</label>
-                <input type="number" name="rooms[__IDX__][available_rooms]" class="form-control form-control-sm" min="0" value="1">
+                <input type="number"
+                       name="rooms[__IDX__][available_rooms]"
+                       class="form-control form-control-sm"
+                       min="0"
+                       value="1">
             </div>
+
             <div class="col-md-2 d-flex flex-column justify-content-end gap-1">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="rooms[__IDX__][with_breakfast]" value="1">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="rooms[__IDX__][with_breakfast]"
+                           value="1">
                     <label class="form-check-label small">Breakfast</label>
                 </div>
+
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="rooms[__IDX__][refundable]" value="1" checked>
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="rooms[__IDX__][refundable]"
+                           value="1"
+                           checked>
                     <label class="form-check-label small">Refundable</label>
                 </div>
             </div>
+
+            {{-- NEW ROOM IMAGE --}}
+            <div class="col-md-12">
+                <label class="form-label small fw-semibold">Room Image</label>
+
+                <input type="file"
+                       name="rooms[__IDX__][image]"
+                       class="form-control form-control-sm"
+                       accept="image/*">
+
+                <div class="form-text">
+                    JPEG, PNG, WebP — optional
+                </div>
+            </div>
+
         </div>
     </div>
 </template>
